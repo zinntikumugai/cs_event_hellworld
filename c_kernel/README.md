@@ -19,6 +19,7 @@ Linux カーネルモジュールとして "Hello, World!" を出力するプロ
 |---|---|
 | `hello.c` | カーネルモジュールのソースコード |
 | `Makefile` | kbuild システム用ビルドファイル |
+| `dkms.conf` | DKMS 設定ファイル |
 | `Dockerfile` | ビルド・実行環境の定義 |
 | `README.md` | このファイル |
 
@@ -36,23 +37,29 @@ docker build -t hello-kernel .
 docker run hello-kernel
 ```
 
-### ホスト環境で直接ビルド・実行する場合
+### ホスト環境で DKMS を使う場合
 
 ```bash
-# ビルド（linux-headers が必要）
-make
+# DKMS にソースを登録
+sudo cp -r . /usr/src/hello-1.0/
+sudo dkms add hello/1.0
+
+# ビルド・インストール
+sudo dkms build hello/1.0
+sudo dkms install hello/1.0
 
 # モジュールのロード（Secure Boot 無効環境のみ）
-sudo insmod hello.ko
+sudo modprobe hello
 
 # カーネルログで出力を確認
 dmesg | tail -1
 
-# モジュールのアンロード
-sudo rmmod hello
+# アンロード・削除
+sudo modprobe -r hello
+sudo dkms remove hello/1.0 --all
 ```
 
-> Secure Boot 有効環境では署名なしモジュールの `insmod` は拒否されます。
+> Secure Boot 有効環境では署名なしモジュールのロードは拒否されます。
 
 ## 期待される出力
 

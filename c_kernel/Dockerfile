@@ -4,16 +4,18 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential \
         kmod \
+        dkms \
         linux-headers-amd64 \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /module
+# DKMS ソースツリーにコピー
+COPY hello.c Makefile dkms.conf /usr/src/hello-1.0/
 
-COPY hello.c Makefile ./
-
-# カーネルヘッダのバージョンを自動検出してビルド
+# DKMS でビルド
 RUN KVER=$(ls /lib/modules/ | head -1) && \
-    make -C /lib/modules/${KVER}/build M=/module modules
+    dkms add hello/1.0 && \
+    dkms build hello/1.0 -k ${KVER}
 
 # モジュール情報を表示（Secure Boot 環境では insmod 不可のため）
-CMD modinfo hello.ko
+CMD KVER=$(ls /lib/modules/ | head -1) && \
+    modinfo /var/lib/dkms/hello/1.0/${KVER}/*/module/hello.ko
